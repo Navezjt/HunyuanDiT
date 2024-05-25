@@ -50,10 +50,10 @@ def load_images(image_files):
     return out
 
 
-def init_dialoggen_model(model_path, model_base=None):
+def init_dialoggen_model(model_path, model_base=None, load_4bit=False):
     model_name = get_model_name_from_path(model_path)
     tokenizer, model, image_processor, context_len = load_pretrained_model(
-        model_path, model_base, model_name, llava_type_model=True)
+        model_path, model_base, model_name, llava_type_model=True, load_4bit=load_4bit)
     return {"tokenizer": tokenizer,
             "model": model,
             "image_processor": image_processor}
@@ -67,6 +67,9 @@ def eval_model(models,
                top_p=None,
                num_beams=1,
                max_new_tokens=512,
+               return_history=False,
+               history=None,
+               skip_special=False
                ):
     # Model
     disable_torch_init()
@@ -83,9 +86,16 @@ def eval_model(models,
             qs = image_token_se + "\n" + qs
         else:
             qs = DEFAULT_IMAGE_TOKEN + "\n" + qs
+            
+    if not history:
+        conv = conv_templates['llava_v1'].copy()
+    else:
+        conv = history
 
-    conv = conv_templates['llava_v1'].copy()
-    conv.append_message(conv.roles[0], qs)
+    if skip_special:
+        conv.append_message(conv.roles[0], query)
+    else:
+        conv.append_message(conv.roles[0], qs)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
@@ -123,6 +133,8 @@ def eval_model(models,
         )
 
     outputs = models["tokenizer"].batch_decode(output_ids, skip_special_tokens=True)[0].strip()
+    if return_history:
+        return outputs, conv
     return outputs
 
 
@@ -137,16 +149,21 @@ def remove_prefix(text):
 
 
 class DialogGen(object):
-    def __init__(self, model_path):
-        self.models = init_dialoggen_model(model_path)
+    def __init__(self, model_path, load_4bit=False):
+        self.models = init_dialoggen_model(model_path, load_4bit=load_4bit)
         self.query_template = "请先判断用户的意图，若为画图则在输出前加入<画图>:{}"
 
-    def __call__(self, prompt):
+    def __call__(self, prompt, return_history=False, history=None, skip_special=False):
         enhanced_prompt = eval_model(
             models=self.models,
             query=self.query_template.format(prompt),
             image_file=None,
+            return_history=return_history,
+            history=history,
+            skip_special=skip_special
         )
+        if return_history:
+            return enhanced_prompt
 
         enhanced_prompt, compliance = remove_prefix(enhanced_prompt)
         if not compliance:

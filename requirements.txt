@@ -16,4 +16,4 @@ nvidia-pyindex==1.0.9
 onnx-graphsurgeon==0.3.27
 polygraphy==0.47.1
 pandas==2.0.3
-gradio==4.31.0
+gradio==3.50.2

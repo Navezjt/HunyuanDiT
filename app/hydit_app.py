@@ -93,7 +93,7 @@ def ui():
                         label=strings['infer steps'], minimum=1, maximum=200, value=100, step=1,
                     )
                     seed = gr.Number(
-                        label=strings['seed'], minimum=-1, maximum=1_000_000_000, value=1, step=1, precision=0,
+                        label=strings['seed'], minimum=-1, maximum=1_000_000_000, value=42, step=1, precision=0,
                     )
                     enhance = gr.Checkbox(
                         label=strings['enhance'], value=enhancer is not None, interactive=True,
@@ -149,7 +149,6 @@ def ui():
                 ['麻婆豆腐'],
                 ['苏州园林'],
                 ['一颗新鲜的草莓特写，红色的外表，表面布满许多种子，背景是淡绿色的叶子'],
-                ['请画出“忽如一夜春风来 千树万树梨花开”'],
                 ['请将“杞人忧天”的样子画出来'],
                 ['枯藤老树昏鸦，小桥流水人家'],
                 ['湖水清澈，天空湛蓝，阳光灿烂。一只优雅的白天鹅在湖边游泳。它周围有几只小鸭子，看起来非常可爱，整个画面给人一种宁静祥和的感觉。'],

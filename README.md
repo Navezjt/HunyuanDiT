@@ -25,9 +25,14 @@ This repo contains PyTorch model definitions, pre-trained weights and inference/
 > [**DialogGen:Multi-modal Interactive Dialogue System for Multi-turn Text-to-Image Generation**](https://arxiv.org/abs/2403.08857)<br>
 
 
-## 🔥🔥🔥 Tencent Hunyuan Bot
+## 🔥🔥🔥 News!!
 
-Welcome to [Tencent Hunyuan Bot](https://hunyuan.tencent.com/bot/chat), where you can explore our innovative products! Just input the suggested prompts below or any other **imaginative prompts containing drawing-related keywords** to activate the Hunyuan text-to-image generation feature.  Unleash your creativity and create any picture you desire, **all for free!**
+* May 22, 2024: 🚀 We introduce TensorRT version for Hunyuan-DiT acceleration, which achieves **47%** acceleration on NVIDIA GPUs. Please check [TensorRT-libs](https://huggingface.co/Tencent-Hunyuan/TensorRT-libs) for instructions.
+* May 22, 2024: 💬 We support demo running multi-turn text2image generation now. Please check the [script](#using-gradio) below.
+
+## 🤖 Try it on the web
+
+Welcome to our web-based [**Tencent Hunyuan Bot**](https://hunyuan.tencent.com/bot/chat), where you can explore our innovative products! Just input the suggested prompts below or any other **imaginative prompts containing drawing-related keywords** to activate the Hunyuan text-to-image generation feature.  Unleash your creativity and create any picture you desire, **all for free!**
 
 You can use simple prompts similar to natural language text
 
@@ -55,11 +60,12 @@ or multi-turn language interactions to create the picture.
   - [x] Inference 
   - [x] Checkpoints 
   - [ ] Distillation Version (Coming soon ⏩️)
-  - [ ] TensorRT Version (Coming soon ⏩️)
+  - [x] TensorRT Version (Coming soon ⏩️)
   - [ ] Training (Coming later ⏩️)
 - [DialogGen](https://github.com/Centaurusalpha/DialogGen) (Prompt Enhancement Model)
   - [x] Inference 
 - [X] Web Demo (Gradio) 
+- [x] Multi-turn T2I Demo (Gradio)
 - [X] Cli Demo 
 
 ## Contents
@@ -77,6 +83,7 @@ or multi-turn language interactions to create the picture.
     - [Using Gradio](#using-gradio)
     - [Using Command Line](#using-command-line)
     - [More Configurations](#more-configurations)
+  - [🚀 Acceleration (for Linux)](#-acceleration-for-linux)
   - [🔗 BibTeX](#-bibtex)
 
 ## **Abstract**
@@ -166,15 +173,14 @@ https://github.com/Tencent/tencent.github.io/assets/27557933/94b4dcc3-104d-44e1-
 
 This repo consists of DialogGen (a prompt enhancement model) and Hunyuan-DiT (a text-to-image model).
 
-The following table shows the requirements for running the models (The TensorRT version will be updated soon):
+The following table shows the requirements for running the models (batch size = 1):
 
-|          Model           | TensorRT | Batch Size | GPU Memory |    GPU    |
-|:------------------------:|:--------:|:----------:|:----------:|:---------:|
-| DialogGen + Hunyuan-DiT  |    ✘     |     1      |    32G     | V100/A100 |
-|       Hunyuan-DiT        |    ✘     |     1      |    11G     | V100/A100 |
-
-<!-- | DialogGen + Hunyuan-DiT  |    ✔     |     1      |     ?      |   A100    |
-|       Hunyuan-DiT        |    ✔     |     1      |     ?      |   A100    | -->
+|          Model          | --load-4bit (DialogGen) | GPU Peak Memory |       GPU       |
+|:-----------------------:|:-----------------------:|:---------------:|:---------------:|
+| DialogGen + Hunyuan-DiT |            ✘            |       32G       |      A100       |
+| DialogGen + Hunyuan-DiT |            ✔            |       22G       |      A100       |
+|       Hunyuan-DiT       |            -            |       11G       |      A100       |
+|       Hunyuan-DiT       |            -            |       14G       | RTX3090/RTX4090 |
 
 * An NVIDIA GPU with CUDA support is required. 
   * We have tested V100 and A100 GPUs.
@@ -185,15 +191,17 @@ The following table shows the requirements for running the models (The TensorRT 
 ## 🛠️ Dependencies and Installation
 
 Begin by cloning the repository:
-```bash
+```shell
 git clone https://github.com/tencent/HunyuanDiT
 cd HunyuanDiT
 ```
 
+### Installation Guide for Linux
+
 We provide an `environment.yml` file for setting up a Conda environment.
 Conda's installation instructions are available [here](https://docs.anaconda.com/free/miniconda/index.html).
 
-```bash
+```shell
 # 1. Prepare conda environment
 conda env create -f environment.yml
 
@@ -210,20 +218,42 @@ python -m pip install git+https://github.com/Dao-AILab/flash-attention.git@v2.1.
 ## 🧱 Download Pretrained Models
 To download the model, first install the huggingface-cli. (Detailed instructions are available [here](https://huggingface.co/docs/huggingface_hub/guides/cli).)
 
-```bash
+```shell
 python -m pip install "huggingface_hub[cli]"
 ```
 
 Then download the model using the following commands:
 
-```bash
+```shell
 # Create a directory named 'ckpts' where the model will be saved, fulfilling the prerequisites for running the demo.
 mkdir ckpts
 # Use the huggingface-cli tool to download the model.
 # The download time may vary from 10 minutes to 1 hour depending on network conditions.
 huggingface-cli download Tencent-Hunyuan/HunyuanDiT --local-dir ./ckpts
 ```
-Note：If an `No such file or directory: 'ckpts/.huggingface/.gitignore.lock'` like error occurs during the download process, you can ignore the error and retry the command by executing `huggingface-cli download Tencent-Hunyuan/HunyuanDiT --local-dir ./ckpts`
+
+<details>
+<summary>💡Tips for using huggingface-cli (network problem)</summary>
+
+##### 1. Using HF-Mirror
+
+If you encounter slow download speeds in China, you can try a mirror to speed up the download process. For example,
+
+```shell
+HF_ENDPOINT=https://hf-mirror.com huggingface-cli download Tencent-Hunyuan/HunyuanDiT --local-dir ./ckpts
+```
+
+##### 2. Resume Download
+
+`huggingface-cli` supports resuming downloads. If the download is interrupted, you can just rerun the download 
+command to resume the download process.
+
+Note: If an `No such file or directory: 'ckpts/.huggingface/.gitignore.lock'` like error occurs during the download 
+process, you can ignore the error and rerun the download command.
+
+</details>
+
+---
 
 All models will be automatically downloaded. For more information about the model, visit the Hugging Face repository [here](https://huggingface.co/Tencent-Hunyuan/HunyuanDiT).
 
@@ -255,13 +285,18 @@ python app/hydit_app.py --no-enhance
 
 # Start with English UI
 python app/hydit_app.py --lang en
+
+# Start a multi-turn T2I generation UI. 
+# If your GPU memory is less than 32GB, use '--load-4bit' to enable 4-bit quantization, which requires at least 22GB of memory.
+python app/multiTurnT2I_app.py
 ```
+Then the demo can be accessed through http://0.0.0.0:443
 
 ### Using Command Line
 
-We provide 3 modes to quick start: 
+We provide several commands to quick start: 
 
-```bash
+```shell
 # Prompt Enhancement + Text-to-Image. Torch mode
 python sample_t2i.py --prompt "渔舟唱晚"
 
@@ -273,6 +308,10 @@ python sample_t2i.py --infer-mode fa --prompt "渔舟唱晚"
 
 # Generate an image with other image sizes.
 python sample_t2i.py --prompt "渔舟唱晚" --image-size 1280 768
+
+# Prompt Enhancement + Text-to-Image. DialogGen loads with 4-bit quantization, but it may loss performance.
+python sample_t2i.py --prompt "渔舟唱晚"  --load-4bit
+
 ```
 
 More example prompts can be found in [example_prompts.txt](example_prompts.txt)
@@ -288,11 +327,18 @@ We list some more useful configurations for easy usage:
 |    `--seed`     |    42     |        The random seed for generating images        |
 | `--infer-steps` |    100    |          The number of steps for sampling           |
 |  `--negative`   |     -     |      The negative prompt for image generation       |
-| `--infer-mode`  |   torch   |          The inference mode (torch or fa)           |
+| `--infer-mode`  |   torch   |       The inference mode (torch, fa, or trt)        |
 |   `--sampler`   |   ddpm    |    The diffusion sampler (ddpm, ddim, or dpmms)     |
 | `--no-enhance`  |   False   |        Disable the prompt enhancement model         |
 | `--model-root`  |   ckpts   |     The root directory of the model checkpoints     |
 |  `--load-key`   |    ema    | Load the student model or EMA model (ema or module) |
+|  `--load-4bit`  |   Fasle   |     Load DialogGen model with 4bit quantization     |
+
+
+## 🚀 Acceleration (for Linux)
+
+We provide TensorRT version of HunyuanDiT for inference acceleration (faster than flash attention).
+See [Tencent-Hunyuan/TensorRT-libs](https://huggingface.co/Tencent-Hunyuan/TensorRT-libs) for more details.
 
 
 ## 🔗 BibTeX
